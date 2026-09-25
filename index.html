@@ -1,0 +1,25 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>North Star Power-Up</title>
+<script src="https://p.trellocdn.com/power-up.min.js"></script></head>
+<body><script>
+const STAR='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23ffd66b" d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z"/></svg>').replace('%2523','%23');
+const COLOR={EMS:'orange',SM:'blue',AIV:'purple'};
+const build=n=>/\bAIV\b/.test(n)?'AIV':/\bSM\b/.test(n)?'SM':/\bEMS\b/.test(n)?'EMS':null;
+TrelloPowerUp.initialize({
+  'board-buttons': t => [{
+    icon:{dark:STAR,light:STAR}, text:'⭐ North Star',
+    callback: t => t.modal({url:'./dashboard.html', fullscreen:true, title:'CoreSync North Star'})
+  }],
+  'card-badges': t => t.card('name','badges').then(c=>{
+    const b=build(c.name); const n=c.badges.checkItems||0, d=c.badges.checkItemsChecked||0;
+    if(!b||!n) return [];
+    return [{text:`${'✦'.repeat(d)}${'✧'.repeat(Math.max(0,n-d))}`, color: d===n?'green':COLOR[b]}];
+  }),
+  'card-detail-badges': t => t.card('name','badges').then(c=>{
+    const b=build(c.name); const n=c.badges.checkItems||0, d=c.badges.checkItemsChecked||0;
+    if(!b||!n) return [];
+    return [{title:'North Star', text:`${d}/${n} stars lit`, color: d===n?'green':COLOR[b],
+             callback: t => t.modal({url:'./dashboard.html', fullscreen:true, title:'CoreSync North Star'})}];
+  })
+});
+</script></body></html>

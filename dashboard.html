@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CoreSync North Star</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky:#141a3d; --sky2:#0d1230; --panel:rgba(255,255,255,.045); --line:rgba(190,200,255,.14);
+  --ink:#eceefe; --mute:#9097c4; --dim:#4b5288;
+  --star:#ffd66b; --ems:#f59e4b; --sm:#62a8ff; --aiv:#b291ff; --ok:#6ee7b7; --warn:#ffb4a2;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --sky:#eef0fb; --sky2:#e2e6f8; --panel:rgba(20,26,61,.04); --line:rgba(20,26,61,.12);
+    --ink:#161b40; --mute:#565d8c; --dim:#b6bbdc; --star:#d99a00; --ems:#d9731f; --sm:#2f7be0; --aiv:#7c55e6; --ok:#0f9d6b; --warn:#b3412a;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --sky:#eef0fb; --sky2:#e2e6f8; --panel:rgba(20,26,61,.04); --line:rgba(20,26,61,.12);
+  --ink:#161b40; --mute:#565d8c; --dim:#b6bbdc; --star:#d99a00; --ems:#d9731f; --sm:#2f7be0; --aiv:#7c55e6; --ok:#0f9d6b; --warn:#b3412a;
+  color-scheme:light;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 80% at 50% 0%,var(--sky) 0%,var(--sky2) 70%);background-color:var(--sky2);color:var(--ink);
+  font:400 15px/1.55 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 18px 48px}
+h1,h2,.num{font-family:"Unbounded","IBM Plex Sans",system-ui,sans-serif}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--star);outline-offset:2px;border-radius:6px}
+
+header.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:clamp(22px,4vw,34px);font-weight:800;margin:0;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:4px 0 0}
+.status{font-size:13px;color:var(--mute);display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.dot.live{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 25%,transparent)}
+.dot.err{background:var(--warn)}
+button{font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer}
+button:hover{border-color:var(--mute)}
+
+/* star map */
+.sky{position:relative;margin:18px 0 8px}
+.sky svg{width:100%;height:auto;display:block}
+.cname{font:600 13px "Unbounded",sans-serif}
+.cmeta{font:400 12px "IBM Plex Sans",sans-serif;fill:var(--mute)}
+.st{transition:opacity .6s, r .6s}
+.st.off{opacity:.35}
+.st.unk{opacity:.18}
+.pct{font:800 44px "Unbounded",sans-serif;fill:var(--ink)}
+.pctl{font:400 13px "IBM Plex Sans",sans-serif;fill:var(--mute)}
+@keyframes twinkle{0%,100%{opacity:1}50%{opacity:.55}}
+.lit{animation:twinkle 3.2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.lit{animation:none}.st{transition:none}}
+
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:6px 0 30px}
+.fact{border-top:1px solid var(--line);padding-top:10px}
+.fact .num{font-size:clamp(24px,4.5vw,36px);font-weight:600;line-height:1.1}
+.fact p{margin:2px 0 0;color:var(--mute);font-size:13px}
+
+/* timeline */
+.timeline{position:relative;margin:0 0 34px}
+.track{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--panel)}
+.seg{position:relative;height:100%}
+.seg i{position:absolute;inset:0 auto 0 0;display:block}
+.today{position:absolute;top:-6px;width:2px;height:26px;background:var(--ink);border-radius:1px}
+.today span{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink);white-space:nowrap}
+.tl-labels{display:flex;font-size:12px;color:var(--mute);margin-top:8px}
+.tl-labels div{flex:1}
+
+h2{font-size:18px;font-weight:600;margin:0 0 14px}
+section{margin-bottom:34px}
+
+/* people */
+.people{display:grid;gap:10px}
+.prow{display:grid;grid-template-columns:150px 1fr 56px;align-items:center;gap:14px;padding:10px 12px;border-radius:12px;background:var(--panel)}
+.who b{display:block;font-weight:600}
+.who span{color:var(--mute);font-size:13px}
+.bars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.bar{display:flex;gap:3px}
+.bar i{flex:1;height:10px;border-radius:3px;background:var(--line)}
+.blabel{font-size:11px;color:var(--mute);margin-top:4px}
+.ptot{font:600 16px "Unbounded",sans-serif;text-align:right}
+
+/* board */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--sky2);border-color:var(--ink)}
+.board-wrap{overflow-x:auto}
+.board{display:grid;grid-template-columns:repeat(5,minmax(190px,1fr));gap:12px;min-width:980px}
+.col{border-radius:12px;background:var(--panel);padding:12px}
+.col h3{font-size:14px;margin:0 0 2px;font-weight:600}
+.col .r{font-size:12px;color:var(--mute)}
+.col ul{list-style:none;margin:10px 0 8px;padding:0;display:grid;gap:6px}
+.col li{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.4}
+.ck{flex:0 0 16px;height:16px;margin-top:2px;border-radius:4px;border:1.5px solid var(--dim);display:grid;place-items:center}
+.done .ck{background:var(--c);border-color:var(--c)}
+.done .ck::after{content:"";width:4px;height:8px;border:solid var(--sky2);border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.done span{color:var(--mute);text-decoration:line-through;text-decoration-color:var(--dim)}
+.col a{font-size:12px;color:var(--mute)}
+.note{font-size:12px;color:var(--warn);margin-top:6px}
+
+.banner{padding:12px 14px;border-radius:12px;border:1px solid var(--warn);color:var(--ink);margin:14px 0;display:none}
+.banner.show{display:block}
+footer{color:var(--mute);font-size:12px;text-align:center}
+
+@media (max-width:720px){
+  .facts{grid-template-columns:1fr 1fr}
+  .facts .fact:last-child{grid-column:1/-1}
+  .prow{grid-template-columns:1fr 48px}
+  .bars{grid-column:1/-1;grid-row:2}
+  .ptot{grid-row:1;grid-column:2}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>CoreSync North Star</h1>
+      <p class="sub">Three builds, 60 tasks, one finish line on December 31, 2026.</p>
+    </div>
+    <div class="status"><span class="dot" id="dot"></span><span id="statusText">Connecting to Trello…</span><button id="refresh" type="button">Refresh</button></div>
+  </header>
+
+  <div class="banner" id="banner" role="status"></div>
+
+  <div class="sky" aria-label="Star map: each star is one task, it lights up when the task is done">
+    <svg id="map" viewBox="0 0 1000 600" role="img" aria-labelledby="mapTitle">
+      <title id="mapTitle">Task constellations for EMS, Smart Manufacturing and AI Vision</title>
+      <defs>
+        <filter id="glow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="bigglow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <g id="dust"></g>
+      <g id="links"></g>
+      <g id="consts"></g>
+      <g id="north"></g>
+    </svg>
+  </div>
+
+  <div class="facts">
+    <div class="fact"><div class="num" id="fDays">–</div><p>days to December 31</p></div>
+    <div class="fact"><div class="num" id="fBuild">–</div><p id="fBuildSub">current build</p></div>
+    <div class="fact"><div class="num" id="fDone">–</div><p>tasks done of 60</p></div>
+  </div>
+
+  <div class="timeline" aria-label="Build timeline">
+    <div class="track" id="track"></div>
+    <div class="today" id="today"><span>Today</span></div>
+    <div class="tl-labels" id="tlLabels"></div>
+  </div>
+
+  <section>
+    <h2>Who's moving</h2>
+    <div class="people" id="people"></div>
+  </section>
+
+  <section>
+    <h2>Task lanes</h2>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="board-wrap"><div class="board" id="board"></div></div>
+  </section>
+
+  <footer>Tick checklist items on each card. Stars light up as the board changes.</footer>
+</div>
+
+<script src="https://p.trellocdn.com/power-up.min.js"></script>
+<script>
+const PREFIX_OBJ=id=>id;
+const PREFIX="ari:cloud:trello::card/workspace/6a7a0e40651239727135361a/";
+const BUILDS=[
+  {key:"EMS",name:"Energy Management",start:"2026-09-24",end:"2026-10-29",c:"--ems",cx:215,cy:380},
+  {key:"SM", name:"Smart Manufacturing",start:"2026-10-29",end:"2026-12-03",c:"--sm",cx:500,cy:455},
+  {key:"AIV",name:"AI Vision",start:"2026-12-03",end:"2026-12-31",c:"--aiv",cx:785,cy:380}
+];
+const PEOPLE=[
+  {key:"tung",name:"Tung",role:"CEO",cards:{EMS:["6ab55fe4c68145446de0a900","KId2nZlS"],SM:["6ab5603a699560555af8f389","uF7wfqSi"],AIV:["6ab56051dd754c627c76054e","2j16ik8t"]},
+   tasks:{EMS:["Sign off EMS scope and success metrics","Secure one pilot factory for EMS","Approve EMS build budget","Run EMS demo go/no-go review (Oct 29)"],
+          SM:["Position Smart Manufacturing vs EMS offer","Sign a Smart Manufacturing design partner","Partner/investor update on EMS → SM","Run SM go/no-go review (Dec 3)"],
+          AIV:["Choose first AI Vision use case","Data-use agreement with pilot site","2027 roadmap and fundraising story","Year-end North Star review"]}},
+  {key:"sense",name:"Sense",role:"CSO",cards:{EMS:["6ab56068981522896fafc062","2ULs3ulR"],SM:["6ab5607edfc00f2e61a31e35","2s0Dz2Lz"],AIV:["6ab56095ed93a49620d10659","x72VH6bU"]},
+   tasks:{EMS:["Build EMS target list: 20 factories","EMS pitch deck and pricing (THB/site/month)","Book 5 discovery calls with plant managers","Collect peak-demand and tariff pain stories"],
+          SM:["Pick SM target segments (lime, cement, food)","EMS + SM bundle pricing","Line up 2 system-integrator partners","Send 3 SM proposals"],
+          AIV:["AI Vision demo video for sales","Lead list for vision QC buyers","Launch post / webinar","Close first AI Vision LOI"]}},
+  {key:"zack",name:"Zack",role:"CTO",cards:{EMS:["6ab5b044b4bdd4dbad316301","df1xUnHO"],SM:["6ab5b05a1b118e9ca43bf104","HysNiN0O"],AIV:["6ab5b0716fa59fe53f12393f","cL6uQMed"]},
+   tasks:{EMS:["EMS architecture: meters → Edge Connector → cloud","Modbus TCP/RTU power-meter driver","kWh / peak kW aggregation and storage","Peak-demand threshold alerts"],
+          SM:["PLC connectors: Siemens S7, Mitsubishi MC, OPC UA","OEE engine: availability, performance, quality","Downtime capture with reason codes","Load test: 500 tags/s through Edge Connector"],
+          AIV:["Camera + edge GPU reference setup","Image collection and labeling pipeline","Train baseline detection model","Send inference events via Edge Connector"]}},
+  {key:"max",name:"Max",role:"CPO",cards:{EMS:["6ab5b089fd031886939c80c1","E2qckHjt"],SM:["6ab5b0a05fb193890e824656","QvmcqQSR"],AIV:["6ab5b0b896b4e6dcaf5ab782","RSlDzVt0"]},
+   tasks:{EMS:["EMS PRD and user stories","Dashboard wireframes: kWh, peak kW, cost","Define KPIs: SEC, power factor, demand","Usability test with pilot site operator"],
+          SM:["SM PRD: OEE, downtime, production counts","Shift report and andon screens","Role views: operator, supervisor, manager","Beta feedback loop with design partner"],
+          AIV:["AI Vision PRD and accuracy targets","Labeling guidelines","Alert review screen","Model accuracy report for customers"]}},
+  {key:"go",name:"Go",role:"COO",cards:{EMS:["6ab5b0d0c8a6feaa57825f1c","uQntj610"],SM:["6ab5bb598df2699f28204481","Y0fKgy3I"],AIV:["6ab5bb7088e9f85e62a7ac80","ZUnK1JUt"]},
+   tasks:{EMS:["Hardware BOM and supplier quotes (meters, gateways)","Pilot install plan and site safety permits","Field deployment checklist and SOP","Weekly schedule check vs Oct 29"],
+          SM:["Standard line-side hardware kit","Installation playbook for PLC sites","Support process and SLA","Gateway vendor contracts"],
+          AIV:["Camera and lighting BOM","Site survey checklist for vision","Labeling resourcing plan","Year-end ops retro"]}}
+];
+const SERVER="Trello", TOOL="trelloReadChecklist";
+const DAY=86400000;
+const tz=d=>new Date(d+"T00:00:00+07:00").getTime();
+const FINISH=tz("2026-12-31"), START=tz("2026-09-24");
+
+// state[person][build] = {done:[bool|null x4], names:[..], err:null|code, storedAt}
+const state={};
+PEOPLE.forEach(p=>{state[p.key]={};BUILDS.forEach(b=>{state[p.key][b.key]={done:[null,null,null,null],names:null,err:null,storedAt:null}})});
+
+let activeTab=null;
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+const el=(tag,attrs={},parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e};
+
+function todayMs(){return Date.now()}
+function currentBuild(){const t=todayMs();return BUILDS.find(b=>t<tz(b.end))||BUILDS[BUILDS.length-1]}
+
+/* ---------- star map ---------- */
+function rng(seed){return()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646}}
+const starNodes={};
+function buildMap(){
+  const dust=$("dust"), links=$("links"), consts=$("consts"), north=$("north");
+  const r=rng(7);
+  for(let i=0;i<140;i++){el("circle",{cx:r()*1000,cy:r()*600,r:(r()*1.1+.2).toFixed(2),fill:"var(--mute)",opacity:(r()*.45+.1).toFixed(2)},dust)}
+  const NX=500,NY=150;
+  BUILDS.forEach((b,bi)=>{
+    el("line",{x1:b.cx,y1:b.cy,x2:NX,y2:NY,stroke:`var(${b.c})`,"stroke-opacity":.18,"stroke-dasharray":"2 6"},links);
+    const g=el("g",{},consts);
+    const pts=[];
+    for(let i=0;i<20;i++){
+      const a=i*2.39996+bi*1.1, rad=17*Math.sqrt(i+.8);
+      pts.push([b.cx+Math.cos(a)*rad*1.25, b.cy+Math.sin(a)*rad*.95]);
+    }
+    for(let pi=0;pi<5;pi++){
+      const seg=pts.slice(pi*4,pi*4+4);
+      el("polyline",{points:seg.map(p=>p.join(",")).join(" "),fill:"none",stroke:`var(${b.c})`,"stroke-opacity":.25,"stroke-width":1},g);
+    }
+    pts.forEach((p,i)=>{
+      const person=PEOPLE[Math.floor(i/4)], ti=i%4;
+      const c=el("circle",{cx:p[0].toFixed(1),cy:p[1].toFixed(1),r:4,fill:`var(${b.c})`,class:"st unk"},g);
+      const t=el("title",{},c); t.textContent=`${person.name}: ${person.tasks[b.key][ti]}`;
+      starNodes[`${person.key}.${b.key}.${ti}`]=c;
+    });
+    const lbl=el("text",{x:b.cx,y:b.cy+150,"text-anchor":"middle",class:"cname",fill:`var(${b.c})`},g); lbl.textContent=b.name;
+    const meta=el("text",{x:b.cx,y:b.cy+170,"text-anchor":"middle",class:"cmeta",id:"meta-"+b.key},g); meta.textContent="0 of 20";
+  });
+  // north star with ring
+  const R=62, C=2*Math.PI*R;
+  el("circle",{cx:NX,cy:NY,r:R,fill:"none",stroke:"var(--line)","stroke-width":6},north);
+  el("circle",{cx:NX,cy:NY,r:R,fill:"none",stroke:"var(--star)","stroke-width":6,"stroke-linecap":"round",
+    "stroke-dasharray":`0 ${C}`,transform:`rotate(-90 ${NX} ${NY})`,id:"ring"},north);
+  const s=26, star=`M${NX},${NY-s} L${NX+6},${NY-6} L${NX+s},${NY} L${NX+6},${NY+6} L${NX},${NY+s} L${NX-6},${NY+6} L${NX-s},${NY} L${NX-6},${NY-6} Z`;
+  el("path",{d:star,fill:"var(--star)",filter:"url(#bigglow)",id:"nstar"},north);
+  const pct=el("text",{x:NX,y:NY+R+50,"text-anchor":"middle",class:"pct",id:"pct"},north); pct.textContent="0%";
+  const pl=el("text",{x:NX,y:NY+R+72,"text-anchor":"middle",class:"pctl"},north); pl.textContent="of the way to the North Star";
+}
+
+/* ---------- static sections ---------- */
+function buildStatic(){
+  const track=$("track"), labels=$("tlLabels"), span=FINISH-START;
+  BUILDS.forEach(b=>{
+    const w=(tz(b.end)-tz(b.start))/span*100;
+    const seg=document.createElement("div"); seg.className="seg"; seg.style.width=w+"%";
+    seg.style.background=`color-mix(in srgb, var(${b.c}) 22%, transparent)`;
+    const fill=document.createElement("i"); fill.id="fill-"+b.key; fill.style.background=`var(${b.c})`; fill.style.width="0%";
+    seg.appendChild(fill); track.appendChild(seg);
+    const l=document.createElement("div"); l.style.flex=`0 0 ${w}%`;
+    l.textContent=`${b.key}, ${fmt(b.start)} to ${fmt(b.end)}`; labels.appendChild(l);
+  });
+  const pos=Math.min(1,Math.max(0,(todayMs()-START)/span));
+  $("today").style.left=`calc(${pos*100}% - 1px)`;
+
+  const tabs=$("tabs");
+  activeTab=currentBuild().key;
+  BUILDS.forEach(b=>{
+    const bt=document.createElement("button"); bt.type="button"; bt.setAttribute("role","tab"); bt.textContent=`${b.key}  ${b.name}`;
+    bt.setAttribute("aria-selected",b.key===activeTab); bt.dataset.k=b.key;
+    bt.onclick=()=>{activeTab=b.key;[...tabs.children].forEach(x=>x.setAttribute("aria-selected",x.dataset.k===activeTab));renderBoard()};
+    tabs.appendChild(bt);
+  });
+}
+function fmt(d){return new Date(d+"T00:00:00+07:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",timeZone:"Asia/Bangkok"})}
+
+/* ---------- render ---------- */
+function count(pk,bk){return state[pk][bk].done.filter(Boolean).length}
+function render(){
+  let total=0;
+  const perBuild={};
+  BUILDS.forEach(b=>{perBuild[b.key]=PEOPLE.reduce((s,p)=>s+count(p.key,b.key),0);total+=perBuild[b.key]});
+  const pct=Math.round(total/60*100);
+  $("pct").textContent=pct+"%";
+  const R=62,C=2*Math.PI*R; $("ring").setAttribute("stroke-dasharray",`${C*total/60} ${C}`);
+  $("fDone").textContent=total;
+  BUILDS.forEach(b=>{
+    $("meta-"+b.key).textContent=`${perBuild[b.key]} of 20 lit`;
+    $("fill-"+b.key).style.width=(perBuild[b.key]/20*100)+"%";
+  });
+  PEOPLE.forEach(p=>BUILDS.forEach(b=>state[p.key][b.key].done.forEach((d,i)=>{
+    const n=starNodes[`${p.key}.${b.key}.${i}`];
+    if(d===true){n.setAttribute("class","st lit");n.setAttribute("r",6.5);n.setAttribute("filter","url(#glow)")}
+    else{n.setAttribute("class",d===false?"st off":"st unk");n.setAttribute("r",3.5);n.removeAttribute("filter")}
+  })));
+  const days=Math.max(0,Math.ceil((FINISH-todayMs())/DAY));
+  $("fDays").textContent=days;
+  const cb=currentBuild(); const left=Math.max(0,Math.ceil((tz(cb.end)-todayMs())/DAY));
+  $("fBuild").textContent=cb.key; $("fBuild").style.color=`var(${cb.c})`;
+  $("fBuildSub").textContent=`current build, ${left} days left`;
+  renderPeople(); renderBoard();
+}
+function renderPeople(){
+  const box=$("people"); box.textContent="";
+  PEOPLE.forEach(p=>{
+    const row=document.createElement("div"); row.className="prow";
+    const who=document.createElement("div"); who.className="who";
+    const b=document.createElement("b"); b.textContent=p.name; const s=document.createElement("span"); s.textContent=p.role;
+    who.append(b,s);
+    const bars=document.createElement("div"); bars.className="bars";
+    let tot=0;
+    BUILDS.forEach(bd=>{
+      const wrap=document.createElement("div"); const bar=document.createElement("div"); bar.className="bar";
+      state[p.key][bd.key].done.forEach(d=>{const i=document.createElement("i"); if(d)i.style.background=`var(${bd.c})`; bar.appendChild(i)});
+      const n=count(p.key,bd.key); tot+=n;
+      const lab=document.createElement("div"); lab.className="blabel"; lab.textContent=`${bd.key} ${n}/4`;
+      wrap.append(bar,lab); bars.appendChild(wrap);
+    });
+    const t=document.createElement("div"); t.className="ptot"; t.textContent=Math.round(tot/12*100)+"%";
+    row.append(who,bars,t); box.appendChild(row);
+  });
+}
+function renderBoard(){
+  const board=$("board"); board.textContent="";
+  const b=BUILDS.find(x=>x.key===activeTab);
+  PEOPLE.forEach(p=>{
+    const st=state[p.key][b.key];
+    const col=document.createElement("div"); col.className="col"; col.style.setProperty("--c",`var(${b.c})`);
+    const h=document.createElement("h3"); h.textContent=`${p.name}  ${count(p.key,b.key)}/4`;
+    const r=document.createElement("div"); r.className="r"; r.textContent=p.role;
+    const ul=document.createElement("ul");
+    (st.names||p.tasks[b.key]).forEach((name,i)=>{
+      const li=document.createElement("li");
+      const ck=document.createElement("span"); ck.className="ck"; ck.setAttribute("aria-hidden","true");
+      const tx=document.createElement("span"); tx.textContent=name;
+      li.append(ck,tx);
+      ul.appendChild(li);
+    });
+    const a=document.createElement("a"); a.href="#"; a.textContent="Open card"; a.onclick=e=>{e.preventDefault(); if(t) t.showCard(PREFIX_OBJ(p.cards[b.key][0]));};
+    col.append(h,r,ul,a);
+    if(st.err){const n=document.createElement("div"); n.className="note"; n.textContent=errCopy(st.err,true); col.appendChild(n)}
+    board.appendChild(col);
+  });
+}
+
+/* ---------- live data: Trello Power-Up ---------- */
+const t = window.TrelloPowerUp ? window.TrelloPowerUp.iframe() : null;
+function buildOf(name){ if(/\bAIV\b/.test(name))return "AIV"; if(/\bSM\b/.test(name))return "SM"; if(/\bEMS\b/.test(name))return "EMS"; return null }
+function personOf(listName){ const l=listName.toLowerCase(); return PEOPLE.find(p=>l.includes(p.name.toLowerCase())) }
+async function load(){
+  if(!t){ $("statusText").textContent="Open this page from the North Star button in Trello"; $("dot").className="dot err"; return }
+  try{
+    const [cards,lists]=await Promise.all([t.cards("id","name","badges","idList","url","closed"), t.lists("id","name")]);
+    const listById={}; lists.forEach(l=>listById[l.id]=l.name);
+    PEOPLE.forEach(p=>BUILDS.forEach(b=>{const c=state[p.key][b.key]; c.done=[false,false,false,false]; c.url=null}));
+    cards.filter(c=>!c.closed).forEach(c=>{
+      const b=buildOf(c.name), p=personOf(listById[c.idList]||""); if(!b||!p) return;
+      const n=(c.badges&&c.badges.checkItemsChecked)||0;
+      state[p.key][b.key].done=[0,1,2,3].map(i=>i<n);
+      state[p.key][b.key].url=c.url;
+    });
+    render();
+    $("dot").className="dot live";
+    $("statusText").textContent="Live from this board, updated "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  }catch(e){ $("dot").className="dot err"; $("statusText").textContent="Couldn't read the board. Close and reopen North Star."; }
+}
+$("refresh").onclick=load;
+buildMap(); buildStatic(); render();
+if(t){ t.render(load); } else { load(); }
+</script>
+</body>
+</html>
