@@ -156,7 +156,7 @@ footer{color:var(--mute);font-size:12px;text-align:center}
     <div class="board-wrap"><div class="board" id="board"></div></div>
   </section>
 
-  <footer>Tick checklist items on each card. Stars light up as the board changes.</footer>
+  <footer>v4 · Tick checklist items on each card. Stars light up as the board changes.</footer>
 </div>
 
 <script src="https://p.trellocdn.com/power-up.min.js"></script>
@@ -349,7 +349,7 @@ function personOf(listName){ const l=listName.toLowerCase(); return PEOPLE.find(
 async function load(){
   if(!t){ $("statusText").textContent="Open this page from the North Star button in Trello"; $("dot").className="dot err"; return }
   try{
-    const [cards,lists]=await Promise.all([t.cards("id","name","badges","idList","url","closed"), t.lists("id","name")]);
+    const [cards,lists]=await Promise.all([t.cards("all"), t.lists("all")]);
     const listById={}; lists.forEach(l=>listById[l.id]=l.name);
     PEOPLE.forEach(p=>BUILDS.forEach(b=>{const c=state[p.key][b.key]; c.done=[false,false,false,false]; c.url=null}));
     cards.filter(c=>!c.closed).forEach(c=>{
@@ -361,7 +361,7 @@ async function load(){
     render();
     $("dot").className="dot live";
     $("statusText").textContent="Live from this board, updated "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
-  }catch(e){ $("dot").className="dot err"; $("statusText").textContent="Couldn't read the board. Close and reopen North Star."; }
+  }catch(e){ console.error(e); $("dot").className="dot err"; $("statusText").textContent="Couldn't read the board ("+((e&&e.message)||e)+")"; }
 }
 $("refresh").onclick=load;
 buildMap(); buildStatic(); render();
