@@ -156,7 +156,7 @@ footer{color:var(--mute);font-size:12px;text-align:center}
     <div class="board-wrap"><div class="board" id="board"></div></div>
   </section>
 
-  <footer>v4 · Tick checklist items on each card. Stars light up as the board changes.</footer>
+  <footer>v5 · Tick checklist items on each card. Stars light up as the board changes.</footer>
 </div>
 
 <script src="https://p.trellocdn.com/power-up.min.js"></script>
@@ -355,8 +355,8 @@ async function load(){
     cards.filter(c=>!c.closed).forEach(c=>{
       const b=buildOf(c.name), p=personOf(listById[c.idList]||""); if(!b||!p) return;
       const n=(c.badges&&c.badges.checkItemsChecked)||0;
-      state[p.key][b.key].done=[0,1,2,3].map(i=>i<n);
-      state[p.key][b.key].url=c.url;
+      state[p.key][b].done=[0,1,2,3].map(i=>i<n);
+      state[p.key][b].url=c.url;
     });
     render();
     $("dot").className="dot live";
