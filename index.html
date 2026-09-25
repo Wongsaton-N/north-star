@@ -2,24 +2,74 @@
 <html><head><meta charset="utf-8"><title>North Star Power-Up</title>
 <script src="https://p.trellocdn.com/power-up.min.js"></script></head>
 <body><script>
-const STAR='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23ffd66b" d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z"/></svg>').replace('%2523','%23');
+const V='6';
+const STAR='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#ffd66b" d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z"/></svg>');
+const PEOPLE=['Tung','Sense','Zack','Max','Go'];
+const BUILDS={EMS:['2026-09-24','2026-10-29'],SM:['2026-10-29','2026-12-03'],AIV:['2026-12-03','2026-12-31']};
 const COLOR={EMS:'orange',SM:'blue',AIV:'purple'};
-const build=n=>/\bAIV\b/.test(n)?'AIV':/\bSM\b/.test(n)?'SM':/\bEMS\b/.test(n)?'EMS':null;
+const ms=d=>new Date(d+'T00:00:00+07:00').getTime();
+const buildOf=n=>/\bAIV\b/.test(n)?'AIV':/\bSM\b/.test(n)?'SM':/\bEMS\b/.test(n)?'EMS':null;
+const personOf=l=>PEOPLE.find(p=>(l||'').toLowerCase().includes(p.toLowerCase()));
+function currentBuild(){const now=Date.now();return Object.keys(BUILDS).find(b=>now<ms(BUILDS[b][1]))||'AIV'}
+function expected(b){const [s,e]=BUILDS[b].map(ms),now=Date.now();if(now<s)return 0;if(now>=e)return 4;return Math.floor(4*(now-s)/(e-s))}
+function status(b,done,total){const now=Date.now();total=total||4;
+  if(done>=total)return 'done'; if(now<ms(BUILDS[b][0]))return 'upcoming'; return done<expected(b)?'behind':'ontrack'}
+const dashboard=t=>t.modal({url:'./dashboard.html?v='+V, fullscreen:true, title:'CoreSync North Star'});
+
+let cache=null,cacheAt=0;
+function summary(t){
+  if(cache&&Date.now()-cacheAt<5000)return cache;
+  cacheAt=Date.now();
+  cache=Promise.all([t.cards('all'),t.lists('all')]).then(([cards,lists])=>{
+    const ln={};lists.forEach(l=>ln[l.id]=l.name);
+    const s={total:0};PEOPLE.forEach(p=>s[p]={done:0,cur:0,curTotal:4});
+    const cb=currentBuild();
+    cards.filter(c=>!c.closed).forEach(c=>{
+      const b=buildOf(c.name),p=personOf(ln[c.idList]);if(!b||!p)return;
+      const d=(c.badges&&c.badges.checkItemsChecked)||0;
+      s[p].done+=d; s.total+=d;
+      if(b===cb){s[p].cur=d;s[p].curTotal=(c.badges&&c.badges.checkItems)||4}
+    });
+    PEOPLE.forEach(p=>{s[p].status=status(cb,s[p].cur,s[p].curTotal)});
+    s.cb=cb; return s;
+  });
+  return cache;
+}
+const ICON={behind:'⚠',ontrack:'✓',done:'★',upcoming:'·'};
+const PCOLOR={behind:'red',ontrack:'green',done:'green',upcoming:'light-gray'};
+function isNorthStar(n){return /north star/i.test(n)&&!buildOf(n)}
+
+function boardBadges(t){
+  const days=Math.max(0,Math.ceil((ms('2026-12-31')-Date.now())/86400000));
+  return [
+    {dynamic:()=>summary(t).then(s=>({text:`⭐ ${Math.round(s.total/60*100)}% · ${s.total}/60 · ${days}d left`,color:'yellow',refresh:60}))},
+    ...PEOPLE.map(p=>({dynamic:()=>summary(t).then(s=>{const x=s[p];
+      return {text:`${ICON[x.status]} ${p} ${s.cb} ${x.cur}/${x.curTotal}`,color:PCOLOR[x.status],refresh:60}})}))
+  ];
+}
+function cardBadge(c){
+  const b=buildOf(c.name),n=c.badges.checkItems||0,d=c.badges.checkItemsChecked||0;
+  if(!b||!n)return null;
+  const st=status(b,d,n);
+  const stars='✦'.repeat(d)+'✧'.repeat(Math.max(0,n-d));
+  if(st==='behind')return {text:`⚠ ${stars}`,color:'red'};
+  if(st==='done')return {text:stars,color:'green'};
+  if(st==='upcoming')return {text:stars,color:'light-gray'};
+  return {text:stars,color:COLOR[b]};
+}
+
 TrelloPowerUp.initialize({
-  'board-buttons': t => [{
-    icon:{dark:STAR,light:STAR}, text:'⭐ North Star',
-    callback: t => t.modal({url:'./dashboard.html?v=5', fullscreen:true, title:'CoreSync North Star'})
-  }],
+  'board-buttons': t => [{icon:{dark:STAR,light:STAR}, text:'⭐ North Star', callback:dashboard}],
   'card-badges': t => t.card('name','badges').then(c=>{
-    const b=build(c.name); const n=c.badges.checkItems||0, d=c.badges.checkItemsChecked||0;
-    if(!b||!n) return [];
-    return [{text:`${'✦'.repeat(d)}${'✧'.repeat(Math.max(0,n-d))}`, color: d===n?'green':COLOR[b]}];
+    if(isNorthStar(c.name))return boardBadges(t);
+    const x=cardBadge(c);return x?[x]:[];
   }),
   'card-detail-badges': t => t.card('name','badges').then(c=>{
-    const b=build(c.name); const n=c.badges.checkItems||0, d=c.badges.checkItemsChecked||0;
-    if(!b||!n) return [];
-    return [{title:'North Star', text:`${d}/${n} stars lit`, color: d===n?'green':COLOR[b],
-             callback: t => t.modal({url:'./dashboard.html?v=5', fullscreen:true, title:'CoreSync North Star'})}];
+    if(isNorthStar(c.name))return [{title:'North Star',text:'Open star map',color:'yellow',callback:dashboard}];
+    const x=cardBadge(c);if(!x)return [];
+    const d=c.badges.checkItemsChecked||0,n=c.badges.checkItems||0;
+    const label=x.color==='red'?`${d}/${n} · behind plan`:x.color==='light-gray'?`${d}/${n} · not started yet`:`${d}/${n} stars lit`;
+    return [{title:'North Star',text:label,color:x.color,callback:dashboard}];
   })
 });
 </script></body></html>

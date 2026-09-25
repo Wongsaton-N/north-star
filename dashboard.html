@@ -36,7 +36,7 @@ button:hover{border-color:var(--mute)}
 
 /* star map */
 .sky{position:relative;margin:18px 0 8px}
-.sky svg{width:100%;height:auto;display:block}
+.sky svg{width:100%;height:auto;display:block;overflow:visible}
 .cname{font:600 13px "Unbounded",sans-serif}
 .cmeta{font:400 12px "IBM Plex Sans",sans-serif;fill:var(--mute)}
 .st{transition:opacity .6s, r .6s}
@@ -156,7 +156,7 @@ footer{color:var(--mute);font-size:12px;text-align:center}
     <div class="board-wrap"><div class="board" id="board"></div></div>
   </section>
 
-  <footer>v5 · Tick checklist items on each card. Stars light up as the board changes.</footer>
+  <footer>v6 · Tick checklist items on each card. Stars light up as the board changes.</footer>
 </div>
 
 <script src="https://p.trellocdn.com/power-up.min.js"></script>
@@ -165,7 +165,7 @@ const PREFIX_OBJ=id=>id;
 const PREFIX="ari:cloud:trello::card/workspace/6a7a0e40651239727135361a/";
 const BUILDS=[
   {key:"EMS",name:"Energy Management",start:"2026-09-24",end:"2026-10-29",c:"--ems",cx:215,cy:380},
-  {key:"SM", name:"Smart Manufacturing",start:"2026-10-29",end:"2026-12-03",c:"--sm",cx:500,cy:455},
+  {key:"SM", name:"Smart Manufacturing",start:"2026-10-29",end:"2026-12-03",c:"--sm",cx:500,cy:425},
   {key:"AIV",name:"AI Vision",start:"2026-12-03",end:"2026-12-31",c:"--aiv",cx:785,cy:380}
 ];
 const PEOPLE=[
